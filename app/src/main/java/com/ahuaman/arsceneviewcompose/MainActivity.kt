@@ -1,12 +1,20 @@
 package com.ahuaman.arsceneviewcompose
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ahuaman.arsceneviewcompose.ui.theme.ARSceneViewComposeTheme
@@ -32,6 +41,7 @@ import io.github.sceneview.node.ModelNode
 import io.github.sceneview.rememberEngine
 import io.github.sceneview.rememberModelLoader
 import io.github.sceneview.rememberNodes
+import io.github.sceneview.rememberRenderer
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -44,7 +54,20 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ARComposable()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        ARComposable()
+
+                        //Top Icon back
+                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = null, modifier = Modifier
+                            .size(64.dp)
+                            .align(Alignment.TopStart)
+                            .padding(16.dp)
+                            .clickable {
+                                finish()
+                            }
+                        )
+                    }
+
                 }
             }
         }
@@ -52,16 +75,18 @@ class MainActivity : ComponentActivity() {
 }
 
 //Model
-private const val kModelFile = "https://sceneview.github.io/assets/models/DamagedHelmet.glb"
+private const val kModelFile = "https://ahuamana.github.io/models-ar/insect/ant.glb"
 
 @Composable
 fun ARComposable() {
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize(),
     ) {
         var isLoading by remember { mutableStateOf(false) }
         var planeRenderer by remember { mutableStateOf(true) }
         val engine = rememberEngine()
+        val renderer = rememberRenderer(engine)
         val modelLoader = rememberModelLoader(engine)
         val childNodes = rememberNodes()
         val coroutineScope = rememberCoroutineScope()
@@ -70,9 +95,10 @@ fun ARComposable() {
             modifier = Modifier.fillMaxSize(),
             childNodes = childNodes,
             engine = engine,
+            renderer = renderer,
             modelLoader = modelLoader,
             planeRenderer = planeRenderer,
-            onSessionConfiguration = { session, config ->
+            sessionConfiguration = { session, config ->
                 config.depthMode =
                     when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                         true -> Config.DepthMode.AUTOMATIC
@@ -100,10 +126,10 @@ fun ARComposable() {
                                         ModelNode(
                                             modelInstance = it,
                                             // Scale to fit in a 0.5 meters cube
-                                            scaleToUnits = 0.5f,
+                                            scaleToUnits = 1f,
                                             // Bottom origin instead of center so the
-                                            // model base is on floor
-                                            centerOrigin = Position(y = -0.5f)
+                                            // model base is on floor level
+                                            centerOrigin = Position(0f, 0f)
                                         ).apply {
                                             isEditable = true
                                         }
@@ -114,6 +140,9 @@ fun ARComposable() {
                             }
                         }
                     }
+            },
+            onSessionFailed = {
+                Toast.makeText(context, "Session failed", Toast.LENGTH_SHORT).show()
             }
         )
         if (isLoading) {

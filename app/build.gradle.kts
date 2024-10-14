@@ -69,5 +69,5 @@ dependencies {
     debugImplementation(libs.ui.test.manifest)
 
     //ARCore
-    implementation ("io.github.sceneview:arsceneview:1.2.2")
+    implementation ("io.github.sceneview:arsceneview:2.2.1")
 }
